@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>22개국 미래 직업 진단</title>
+    <style>
+        body { display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f4f7f6; font-family: 'Malgun Gothic', sans-serif; }
+        .container { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 600px; }
+        h2 { text-align: center; color: #2c3e50; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+        button { width: 100%; padding: 15px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>미래 직업 추천 시스템</h2>
+        <form id="jobForm">
+            <div class="form-group"><label>성명</label><input type="text" id="name" required></div>
+            <div class="form-group"><label>생년월일</label><input type="date" id="dob" required></div>
+            <div class="form-group"><label>국가 (22개국)</label>
+                <select id="country">
+                    <option value="대한민국">대한민국</option><option value="중국">중국</option><option value="일본">일본</option>
+                    <option value="미국">미국</option><option value="인도">인도</option><option value="독일">독일</option>
+                    <option value="영국">영국</option><option value="프랑스">프랑스</option><option value="브라질">브라질</option>
+                    <option value="이탈리아">이탈리아</option><option value="캐나다">캐나다</option><option value="러시아">러시아</option>
+                    <option value="멕시코">멕시코</option><option value="호주">호주</option><option value="인도네시아">인도네시아</option>
+                    <option value="스페인">스페인</option><option value="사우디아라비아">사우디아라비아</option><option value="튀르키예">튀르키예</option>
+                    <option value="네덜란드">네덜란드</option><option value="스위스">스위스</option><option value="폴란드">폴란드</option><option value="아르헨티나">아르헨티나</option>
+                </select>
+            </div>
+            <div class="form-group"><label>지능/성적/노력</label>
+                <select id="ability"><option value="상">상</option><option value="중">중</option><option value="하">하</option></select>
+            </div>
+            <div class="form-group"><label>직업흥미유형 (RIASEC)</label>
+                <select id="riasec">
+                    <option value="R">디지털·기술형 (현실형 R + IT): 코딩, 시스템 구축, 최신 가젯 분석 등 실용적인 기술 구현과 장비 조작에 집중하는 성향</option>
+                    <option value="I">분석·탐구형 (탐구형 I): 지표 추적, 우주·심해 연구, 원리 파헤치기 등 논리적 분석과 과학적 발견을 추구하는 성향</option>
+                    <option value="A">창의·예술형 (예술형 A): 메타버스 구축, 영상 편집, 디자인 등 새로운 가치를 창조하고 미적 감각을 표현하는 성향</option>
+                    <option value="S">사회·웰니스형 (사회형 S): 상담, 커뮤니티 운영, 환경 보호 및 보건 등 타인과의 교감과 사회적 안녕을 중시하는 성향</option>
+                    <option value="E">비즈니스·진취형 (진취형 E): 프로젝트 리딩, 마케팅, 기업가적 활동 등 목표 달성과 조직 관리에 능숙한 성향</option>
+                    <option value="C">시스템·관리형 (관습형 C): 데이터 정리, 효율적 프로세스 설계, 정교한 기록 관리 등 질서와 정확성을 중시하는 성향</option>
+                </select>
+            </div>
+            <div class="form-group"><label>개인성향 (Big 5)</label>
+                <select id="big5">
+                    <option value="O">경험에 대한 개방성 (Openness): 새로운 아이디어나 변화에 대한 수용</option>
+                    <option value="C">성실성 (Conscientiousness): 목표 지향적이고 체계적으로 업무를 수행하는 책임감</option>
+                    <option value="E">외향성 (Extraversion): 타인과의 상호작용 및 사교성</option>
+                    <option value="A">우호성 (Agreeableness): 타인에 대한 신뢰와 협조적인 태도</option>
+                    <option value="N">신경증 (Neuroticism): 정서적 안정성 및 스트레스 민감</option>
+                </select>
+            </div>
+            <button type="submit">진단 결과 보기</button>
+        </form>
+    </div>
+
+
+<script>
+  document.getElementById('jobForm').addEventListener('submit', async function(e) {
+    e.preventDefault(); // 페이지 리로드 막기
+
+    // 입력값 수집
+    const formData = {
+      name: document.getElementById('name').value,
+      dob: document.getElementById('dob').value,
+      country: document.getElementById('country').value,
+      ability: document.getElementById('ability').value,
+      riasec: document.getElementById('riasec').value.charAt(0), // 첫 글자만 (R, I 등)
+      big5: document.getElementById('big5').value.charAt(0)       // 첫 글자만 (O, C 등)
+    };
+
+    try {
+      const response = await fetch('/recommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        alert(data.error);
+      } else {
+        // 결과 화면에 표시 (예: 새로운 div에 넣기)
+        const resultDiv = document.createElement('div');
+        resultDiv.style.marginTop = '30px';
+        resultDiv.style.padding = '20px';
+        resultDiv.style.background = '#f0f8ff';
+        resultDiv.style.borderRadius = '10px';
+        resultDiv.style.whiteSpace = 'pre-wrap';
+        resultDiv.textContent = data.message;
+        document.querySelector('.container').appendChild(resultDiv);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('서버 연결 오류가 발생했습니다.');
+    }
+  });
+</script>
+
+
+</body>
+</html>
