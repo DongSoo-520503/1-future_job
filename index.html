@@ -10,7 +10,7 @@
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
-        button { width: 100%; padding: 15px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        button[type="submit"] { width: 100%; padding: 15px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -56,19 +56,17 @@
         </form>
     </div>
 
-
 <script>
   document.getElementById('jobForm').addEventListener('submit', async function(e) {
-    e.preventDefault(); // 페이지 리로드 막기
+    e.preventDefault();
 
-    // 입력값 수집
     const formData = {
-      name: document.getElementById('name').value,
-      dob: document.getElementById('dob').value,
+      name:    document.getElementById('name').value,
+      dob:     document.getElementById('dob').value,
       country: document.getElementById('country').value,
       ability: document.getElementById('ability').value,
-      riasec: document.getElementById('riasec').value.charAt(0), // 첫 글자만 (R, I 등)
-      big5: document.getElementById('big5').value.charAt(0)       // 첫 글자만 (O, C 등)
+      riasec:  document.getElementById('riasec').value.charAt(0),
+      big5:    document.getElementById('big5').value.charAt(0)
     };
 
     try {
@@ -83,14 +81,29 @@
       if (data.error) {
         alert(data.error);
       } else {
-        // 결과 화면에 표시 (예: 새로운 div에 넣기)
+        // 기존 결과창 제거 (중복 방지)
+        const existing = document.getElementById('resultDiv');
+        if (existing) existing.remove();
+
         const resultDiv = document.createElement('div');
+        resultDiv.id = 'resultDiv';
         resultDiv.style.marginTop = '30px';
         resultDiv.style.padding = '20px';
         resultDiv.style.background = '#f0f8ff';
         resultDiv.style.borderRadius = '10px';
-        resultDiv.style.whiteSpace = 'pre-wrap';
-        resultDiv.textContent = data.message;
+
+        // ✅ text → textContent(pre-wrap), buttons → innerHTML 로 완전 분리
+        const textDiv = document.createElement('div');
+        textDiv.style.whiteSpace = 'pre-wrap';
+        textDiv.style.lineHeight = '1.8';
+        textDiv.style.fontSize = '14px';
+        textDiv.textContent = data.text;   // 순수 텍스트만
+
+        const buttonDiv = document.createElement('div');
+        buttonDiv.innerHTML = data.buttons; // HTML 버튼만
+
+        resultDiv.appendChild(textDiv);
+        resultDiv.appendChild(buttonDiv);
         document.querySelector('.container').appendChild(resultDiv);
       }
     } catch (err) {
@@ -99,7 +112,6 @@
     }
   });
 </script>
-
 
 </body>
 </html>
