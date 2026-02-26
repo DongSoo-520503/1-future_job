@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>22개국 미래 직업 진단</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <style>
@@ -197,6 +198,61 @@
             pointer-events: none;
             opacity: 0.75;
         }
+
+        /* ── 모바일 대응 media query ── */
+        @media (max-width: 600px) {
+            body {
+                padding: 16px 12px;
+            }
+
+            .card {
+                padding: 20px 24px;
+                border-radius: 20px;
+                max-width: 100%;
+                box-shadow: 0 4px 16px rgba(120,120,200,0.15);
+            }
+
+            .title-box {
+                padding: 10px 24px;
+            }
+            .title-box h1 {
+                font-size: 22px;
+            }
+
+            input[type="text"],
+            input[type="date"],
+            select,
+            .submit-btn {
+                font-size: 16px;
+                padding: 14px 16px;
+            }
+
+            .form-group {
+                margin-bottom: 20px;
+            }
+
+            .label-main {
+                font-size: 15px;
+            }
+            .label-hint {
+                font-size: 13px;
+            }
+
+            .submit-btn {
+                padding: 14px;
+                font-size: 17px;
+            }
+
+            select {
+                padding-right: 40px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .card {
+                padding: 16px 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -222,13 +278,13 @@
             </div>
 
             <div class="form-group">
-                  <label>
-                      <div class="label-main">
-                           <span class="icon icon-dob">📅</span> 생년월일
-                      </div>
-                      <div class="label-hint">YYYY-MM-DD 형식으로 직접 입력하세요.</div>
-                  </label>
-                  <input type="text" id="dob" placeholder="YYYY-MM-DD" pattern="\d{4}-\d{2}-\d{2}" title="YYYY-MM-DD 형식으로 입력해주세요" required>
+                <label>
+                    <div class="label-main">
+                        <span class="icon icon-dob">📅</span> 생년월일
+                    </div>
+                    <div class="label-hint">달력에서 선택하지 않고 직접 입력해도 됩니다.</div>
+                </label>
+                <input type="date" id="dob" required>
             </div>
 
             <div class="form-group">
