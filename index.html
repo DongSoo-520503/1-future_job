@@ -14,8 +14,8 @@
             font-family: 'Noto Sans KR', sans-serif;
             display: flex;
             justify-content: center;
-            align-items: center;
-            padding: 12px 16px;
+            align-items: flex-start;
+            padding: 24px 16px;
             position: relative;
             overflow-x: hidden;
         }
@@ -147,11 +147,6 @@
 
         input[type="text"]::placeholder { color: #c4b5fd; }
 
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            opacity: 0.5;
-            cursor: pointer;
-        }
-
         select {
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239f7aea' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
@@ -221,8 +216,7 @@
 
             input[type="text"],
             input[type="date"],
-            select,
-            .submit-btn {
+            select {
                 font-size: 16px;
                 padding: 14px 16px;
             }
@@ -282,9 +276,9 @@
                     <div class="label-main">
                         <span class="icon icon-dob">📅</span> 생년월일
                     </div>
-                    <div class="label-hint">달력에서 선택하지 않고 직접 입력해도 됩니다.</div>
+                    <div class="label-hint">생년월일을 직접 입력하면, 25세 무렵의 직업을 고소득 유망 직업을 추천합니다.</div>
                 </label>
-                <input type="date" id="dob" required>
+                <input type="text" id="dob" placeholder="예) 2010-03-15  (YYYY-MM-DD)" pattern="\d{4}-\d{2}-\d{2}" required>
             </div>
 
             <div class="form-group">
