@@ -8,26 +8,70 @@ app.use(express.static(__dirname));
 
 const jobData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'future_job_final_1980.json'), 'utf8'));
 
+// ── 방향 A: 유형 간 중복을 최소화하고 개념적으로 정교하게 교체된 키워드 ──
+
 const riasecKeywords = {
-    'R': ['기술', '시스템', '설계', '구현', '디지털', '하드웨어', '장비', '에너지', '인프라', '연산'],
-    'I': ['분석', '연구', '양자', '알고리즘', '데이터', '탐구', '과학', '개발'],
-    'A': ['창의', '기획', '디자인', '서비스', '콘텐츠', '언어 모델', '명령어'],
-    'S': ['의료', '건강', '보건', '복지', '커뮤니티', '상담', '교육', '사회'],
-    'E': ['비즈니스', '경영', '전략', '정책', '법적', '우주', '민간', '리더'],
-    'C': ['관리', '효율', '안전', '기준', '수립', '체계', '운영', '저장']
+    // R: 실제 도구·장치·공학 구현에 집중하는 키워드 (관리·시스템 등 범용어 제거)
+    'R': ['설계', '하드웨어', '인프라', '로봇', '센서', '제어', '회로', '엔지니어링', '제조', '자동화'],
+
+    // I: 순수 탐구·연구·알고리즘에 집중 (개발 등 범용어 제거)
+    'I': ['양자', '알고리즘', '연구', '탐구', '시뮬레이션', '모델링', '실험', '데이터 과학', '최적화', '분석'],
+
+    // A: 창작·표현·UX에 집중 (서비스 등 범용어 제거)
+    'A': ['창의', '콘텐츠', '디자인', '기획', '스토리', '인터페이스', '명령어', '프롬프트', '메타버스', '가상현실'],
+
+    // S: 사람 중심 직업 키워드에 집중
+    'S': ['의료', '복지', '보건', '상담', '교육', '돌봄', '치료', '공감', '커뮤니티', '사회적'],
+
+    // E: 비즈니스·리더십·전략 키워드에 집중
+    'E': ['비즈니스', '전략', '경영', '리더', '정책', '스타트업', '투자', '협상', '글로벌', '민간'],
+
+    // C: 체계·규정·품질관리 키워드에 집중 (관리 단독어 제거, 복합어로 특정)
+    'C': ['품질 관리', '프로세스', '규정', '감사', '체계', '수립', '운영 효율', '표준화', '인증', '컴플라이언스']
 };
 
 const big5Keywords = {
-    'O': ['혁신', '차세대', '새로운', '창의', '미래', '개발', '기획'],
-    'C': ['수립', '체계', '안전', '기준', '효율', '관리', '목표'],
-    'E': ['소통', '서비스', '커뮤니티', '협업', '사회', '교육'],
-    'A': ['의료', '건강', '복지', '보건', '공감', '신뢰', '지원'],
-    'N': ['안정', '안전', '보호', '관리', '수소', '에너지']
+    // O(개방성): 혁신·융합·미래지향 키워드
+    'O': ['혁신', '차세대', '새로운', '창의', '미래', '융합', '도전', '선도', '개척', '트렌드'],
+
+    // C(성실성): 계획·정밀·품질 키워드
+    'C': ['체계', '기준', '효율', '목표', '수립', '정밀', '계획', '품질', '프로세스', '일정'],
+
+    // E(외향성): 소통·협업·네트워크 키워드
+    'E': ['소통', '협업', '커뮤니티', '서비스', '교육', '네트워크', '글로벌', '팀', '발표', '강연'],
+
+    // A(우호성): 돌봄·신뢰·지원 키워드
+    'A': ['의료', '복지', '보건', '공감', '신뢰', '지원', '돌봄', '사회적', '배려', '봉사'],
+
+    // N(신경증): 위험·보안·안전 모니터링 직군과 연결 (수소·에너지 등 무관 키워드 제거)
+    'N': ['안전', '보호', '리스크', '감시', '모니터링', '예방', '보안', '안정화', '위기', '대응']
 };
+
+// ── 방향 B: 키워드 등장 횟수 기반 점수 계산 함수 ──
+// 단순 포함 여부(0/1) 대신 등장 횟수를 반영하되, 최대 3회까지만 인정 (과도한 집중 방지)
+function calcScore(desc, keywords) {
+    if (!keywords || keywords.length === 0) return 0;
+    const maxPerKeyword = 3;
+    const rawScore = keywords.reduce((sum, kw) => {
+        const count = desc.split(kw).length - 1; // 등장 횟수
+        return sum + Math.min(count, maxPerKeyword);
+    }, 0);
+    const maxPossible = keywords.length * maxPerKeyword;
+    return (rawScore / maxPossible) * 100;
+}
 
 app.post('/recommend', (req, res) => {
     const { name, dob, country, ability, riasec, big5 } = req.body;
-    const year = new Date(dob).getFullYear() + 25;
+
+    // ── 문제 1 수정: substring으로 연도만 안전하게 추출 ──
+    const birthYear = parseInt((dob || '').substring(0, 4));
+    if (isNaN(birthYear) || birthYear < 1900 || birthYear > 2100) {
+        return res.status(400).json({
+            error: '생년월일 형식이 올바르지 않습니다. 예) 2010-03-15 형식으로 입력해 주세요.'
+        });
+    }
+
+    const year = birthYear + 25;
     const period = `${Math.floor(year / 10) * 10}년대`;
 
     const candidates = jobData.filter(row =>
@@ -43,24 +87,29 @@ app.post('/recommend', (req, res) => {
 
     const rkws = riasecKeywords[riasec] || [];
     const bkws = big5Keywords[big5] || [];
-    const totalRkws = rkws.length;
-    const totalBkws = bkws.length;
 
     candidates.forEach(row => {
         const desc = row['직업해설'] || '';
-        const riasecMatched = rkws.filter(kw => desc.includes(kw)).length;
-        const big5Matched   = bkws.filter(kw => desc.includes(kw)).length;
-        row.riasec_score = totalRkws > 0 ? (riasecMatched / totalRkws) * 100 : 0;
-        row.big5_score   = totalBkws > 0 ? (big5Matched   / totalBkws) * 100 : 0;
+
+        // ── 방향 B: 등장 횟수 기반 점수 계산 적용 ──
+        row.riasec_score = Math.round(calcScore(desc, rkws) * 100) / 100;
+        row.big5_score   = Math.round(calcScore(desc, bkws) * 100) / 100;
         row.final_score  = Math.round((row.riasec_score * 0.6 + row.big5_score * 0.4) * 100) / 100;
     });
+
+    // 전체 점수가 0인 경우 경고 플래그 설정
+    const allZero = candidates.every(row => row.final_score === 0);
 
     candidates.sort((a, b) =>
         b.final_score - a.final_score || parseInt(a['연봉순위']) - parseInt(b['연봉순위'])
     );
     const best = candidates[0];
 
-    // ✅ text 와 buttons 를 별도 필드로 분리해서 전송 → index.html에서 splitMarker 불필요
+    // 전체 0점일 때 안내 문구 추가
+    const zeroScoreNote = allZero
+        ? '\n※ 성향 키워드 매칭 결과가 없어 연봉순위 기준으로 최상위 직업을 추천하였습니다.'
+        : '';
+
     const text = `1. 출력 결과
 
 성명: ${name}
@@ -76,11 +125,10 @@ app.post('/recommend', (req, res) => {
 
 조건 필터링: 국가, 시기, 등급 데이터를 기반으로 1차 후보군 ${candidateCount}개를 추출하였습니다.
 성향 점수화: 직업흥미유형(RIASEC) 키워드 매칭 비율 ${best.riasec_score.toFixed(1)}점, 개인성향(Big5) 키워드 매칭 비율 ${best.big5_score.toFixed(1)}점을 60:40 가중평균하여 최종 적합도 ${best.final_score}점을 산출하였습니다.
-최종 선택: 적합도 점수와 연봉순위를 종합하여 최적의 직업 1종을 선정하였습니다.`;
+최종 선택: 적합도 점수와 연봉순위를 종합하여 최적의 직업 1종을 선정하였습니다.${zeroScoreNote}`;
 
     const buttons = `<div style="margin-top:12px;padding:16px;background:#f8f9fa;border-radius:10px;border:1px solid #dee2e6;"><p style="margin:0 0 12px 0;font-size:14px;font-weight:bold;color:#333;line-height:1.6;">💡 미래 직업 선택과 관련하여 궁금한 점이 있으시면, 아래의 L.L.M. 모델 중 본인이 가입한 모델을 눌러 문의해 보세요.</p><div style="display:flex;flex-direction:column;gap:8px;"><a href="https://chat.openai.com" target="_blank" style="text-decoration:none;"><button style="width:100%;padding:12px 16px;font-size:14px;font-weight:bold;background:#10a37f;color:white;border:none;border-radius:8px;cursor:pointer;text-align:left;">💬 ChatGPT &nbsp;|&nbsp; <span style="font-weight:normal;font-size:13px;">창작 · 글쓰기 · 대화에 강함</span></button></a><a href="https://gemini.google.com" target="_blank" style="text-decoration:none;"><button style="width:100%;padding:12px 16px;font-size:14px;font-weight:bold;background:#4285f4;color:white;border:none;border-radius:8px;cursor:pointer;text-align:left;">✨ Gemini &nbsp;|&nbsp; <span style="font-weight:normal;font-size:13px;">구글 연동 · 코딩에 강함</span></button></a><a href="https://claude.ai" target="_blank" style="text-decoration:none;"><button style="width:100%;padding:12px 16px;font-size:14px;font-weight:bold;background:#d97706;color:white;border:none;border-radius:8px;cursor:pointer;text-align:left;">🤖 Claude &nbsp;|&nbsp; <span style="font-weight:normal;font-size:13px;">심층 분석 · 문서 작성에 강함</span></button></a><a href="https://www.perplexity.ai" target="_blank" style="text-decoration:none;"><button style="width:100%;padding:12px 16px;font-size:14px;font-weight:bold;background:#6366f1;color:white;border:none;border-radius:8px;cursor:pointer;text-align:left;">🔎 Perplexity &nbsp;|&nbsp; <span style="font-weight:normal;font-size:13px;">정보검색 · 최신 웹 요약에 강함</span></button></a><a href="https://grok.com" target="_blank" style="text-decoration:none;"><button style="width:100%;padding:12px 16px;font-size:14px;font-weight:bold;background:#1d9bf0;color:white;border:none;border-radius:8px;cursor:pointer;text-align:left;">⚡ Grok &nbsp;|&nbsp; <span style="font-weight:normal;font-size:13px;">심층 질문 · 뉴스 분석에 강함</span></button></a><a href="https://chat.deepseek.com" target="_blank" style="text-decoration:none;"><button style="width:100%;padding:12px 16px;font-size:14px;font-weight:bold;background:#e53e3e;color:white;border:none;border-radius:8px;cursor:pointer;text-align:left;">🐋 DeepSeek &nbsp;|&nbsp; <span style="font-weight:normal;font-size:13px;">무료 · 코딩 · 논리 추론에 강함</span></button></a></div></div>`;
 
-    // text, buttons 를 별도 필드로 분리 전송
     res.json({ text, buttons });
 });
 
